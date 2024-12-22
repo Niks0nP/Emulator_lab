@@ -9,18 +9,22 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
     private val instructionMemory = Memory(instructionMemorySize)
     private val accumulator = Register16Bit()
     private val programCounter = Register16Bit()
+    private val indicatorRegister = Register16Bit()
     private val flags = mutableMapOf("GZ" to false, "EZ" to false, "LZ" to false)
 
     fun initializeData(data: IntArray) {
+        dataMemory.write(0, data.size)
         for (i in data.indices) {
-            dataMemory.write(i, data[i])
+            dataMemory.write(i + 1, data[i])
         }
     }
 
-    fun initializeInstructions(instructions: List<Instruction>) {
+    fun initializeInstructions(program: List<String>) {
+        val translator = Translator()
+        val instructions = translator.translateProgram(program)
+
         instructions.forEachIndexed { index, instruction ->
-            val encoded = encodeInstruction(instruction)
-            instructionMemory.write(index, encoded)
+            instructionMemory.write(index, instruction)
         }
     }
 
@@ -49,7 +53,10 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
             val instruction = decodeInstruction(instructionCode)
 
             when (instruction.commandCode) {
-                0 -> accumulator.setValue(dataMemory.read(instruction.address)) // LOAD
+                0 -> {
+                    accumulator.setValue(dataMemory.read(instruction.address)) // LOAD
+                    updateFlags(dataMemory.read(instruction.address))
+                }
                 1 -> dataMemory.write(instruction.address, accumulator.getValue()) // STORE
                 2 -> {
                     accumulator.setValue(accumulator.getValue() + dataMemory.read(instruction.address)) // ADD
@@ -69,20 +76,24 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                     updateFlags(accumulator.getValue())
                 }
                 6 -> {
-                    if (flags["GZ"] == true) { // Проверка флага GZ
-                        accumulator.setValue(dataMemory.read(instruction.address))
-                    } else {
-                        flags["GZ"] = false // Сбрасываем флаг
+                    if (flags["EZ"] == true) { // Проверка флага EZ
+                        programCounter.setValue(instruction.address - 1)
                     }
                 }
                 7 -> {
-                    if (flags["LZ"] == true) { // Проверка флага GZ
-                        accumulator.setValue(dataMemory.read(instruction.address))
-                    } else {
-                        flags["LZ"] = false // Сбрасываем флаг
-                    }
+                    accumulator.setValue(dataMemory.read(dataMemory.read(100)))// LOOP
                 }
                 8 -> {
+                    if (flags["LZ"] == true) {
+                        programCounter.setValue(instruction.address - 1)
+                    }
+                }
+                9 -> {
+                    if (flags["GZ"] == true) {
+                        programCounter.setValue(instruction.address - 1)
+                    }
+                }
+                10 -> {
                     println("Program halted.") // HALT
                     return
                 }
@@ -97,7 +108,7 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
         println("Accumulator: $accumulator")
         println("ProgramCounter: $programCounter")
         println("Flags: $flags")
-        dataMemory.displayMemory(0, 10)
+        dataMemory.displayMemory(0, 20)
     }
 }
 
