@@ -9,10 +9,12 @@ class Translator {
         "INC" to "0100",
         "DEC" to "0101",
         "CEZ" to "0110",
-        "LOOP" to "0111",
-        "CLZ" to "1000",
-        "CGZ" to "1001",
-        "HALT" to "1010"
+        "LDI" to "0111",
+        "IINC" to "1000",
+        "CLZ" to "1001",
+        "CGZ" to "1010",
+        "HALT" to "1011",
+        "MVS" to "1100"
     )
 
     private val addressingCode = mapOf(

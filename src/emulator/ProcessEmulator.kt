@@ -10,6 +10,7 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
     private val accumulator = Register16Bit()
     private val programCounter = Register16Bit()
     private val indicatorRegister = Register16Bit()
+    private val maxElementRegister = Register16Bit()
     private val flags = mutableMapOf("GZ" to false, "EZ" to false, "LZ" to false)
 
     fun initializeData(data: IntArray) {
@@ -63,7 +64,7 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                     updateFlags(accumulator.getValue())
                 }
                 3 -> {
-                    val result = accumulator.getValue() - dataMemory.read(instruction.address) // SUB
+                    val result = accumulator.getValue() - maxElementRegister.getValue() // SUB
                     updateFlags(result)
                     accumulator.setValue(result)
                 }
@@ -76,26 +77,33 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                     updateFlags(accumulator.getValue())
                 }
                 6 -> {
-                    if (flags["EZ"] == true) { // Проверка флага EZ
+                    if (flags["EZ"] == true) { // CEZ
                         programCounter.setValue(instruction.address - 1)
                     }
                 }
                 7 -> {
-                    accumulator.setValue(dataMemory.read(dataMemory.read(100)))// LOOP
+                    accumulator.setValue(dataMemory.read(indicatorRegister.getValue()))// LDI
+                    updateFlags(accumulator.getValue())
                 }
                 8 -> {
-                    if (flags["LZ"] == true) {
-                        programCounter.setValue(instruction.address - 1)
-                    }
+                    indicatorRegister.increment() // IINC
                 }
                 9 -> {
-                    if (flags["GZ"] == true) {
+                    if (flags["LZ"] == true) { // CLZ
                         programCounter.setValue(instruction.address - 1)
                     }
                 }
                 10 -> {
+                    if (flags["GZ"] == true) { // CGZ
+                        programCounter.setValue(instruction.address - 1)
+                    }
+                }
+                11 -> {
                     println("Program halted.") // HALT
                     return
+                }
+                12 -> {
+                    maxElementRegister.setValue(dataMemory.read(indicatorRegister.getValue())) // MVS
                 }
                 else -> throw IllegalArgumentException("Unknown command code: ${instruction.commandCode}")
             }
@@ -107,8 +115,9 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
     fun displayState() {
         println("Accumulator: $accumulator")
         println("ProgramCounter: $programCounter")
+        println("MaxValue: $maxElementRegister")
         println("Flags: $flags")
-        dataMemory.displayMemory(0, 20)
+        dataMemory.displayMemory(0, 12)
     }
 }
 
