@@ -14,7 +14,10 @@ class Translator {
         "CLZ" to "1001",
         "CGZ" to "1010",
         "HALT" to "1011",
-        "MVS" to "1100"
+        "MVS" to "1100",
+        "SAS" to "1101",
+        "DECA" to "1110",
+        "LDS" to "1111"
     )
 
     private val addressingCode = mapOf(

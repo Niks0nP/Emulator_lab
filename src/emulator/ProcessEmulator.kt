@@ -9,8 +9,9 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
     private val instructionMemory = Memory(instructionMemorySize)
     private val accumulator = Register16Bit()
     private val programCounter = Register16Bit()
-    private val indicatorRegister = Register16Bit()
-    private val maxElementRegister = Register16Bit()
+    private val R1 = Register16Bit() // регистр указателя
+    private val R2 = Register16Bit() // регистр максимального элемента
+    private val R3 = Register16Bit() // регистр размера массива
     private val flags = mutableMapOf("GZ" to false, "EZ" to false, "LZ" to false)
 
     fun initializeData(data: IntArray) {
@@ -64,7 +65,7 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                     updateFlags(accumulator.getValue())
                 }
                 3 -> {
-                    val result = accumulator.getValue() - maxElementRegister.getValue() // SUB
+                    val result = accumulator.getValue() - R2.getValue() // SUB
                     updateFlags(result)
                     accumulator.setValue(result)
                 }
@@ -82,11 +83,11 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                     }
                 }
                 7 -> {
-                    accumulator.setValue(dataMemory.read(indicatorRegister.getValue()))// LDI
+                    accumulator.setValue(dataMemory.read(R1.getValue()))// LDI
                     updateFlags(accumulator.getValue())
                 }
                 8 -> {
-                    indicatorRegister.increment() // IINC
+                    R1.increment() // IINC
                 }
                 9 -> {
                     if (flags["LZ"] == true) { // CLZ
@@ -103,7 +104,18 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                     return
                 }
                 12 -> {
-                    maxElementRegister.setValue(dataMemory.read(indicatorRegister.getValue())) // MVS
+                    R2.setValue(dataMemory.read(R1.getValue())) // MVS
+                }
+                13 -> {
+                    R3.setValue(dataMemory.read(instruction.address)) //SAS
+                }
+                14 -> {
+                    R3.decrement() //DECA
+                    updateFlags(R3.getValue())
+                }
+                15 -> {
+                    accumulator.setValue(R3.getValue()) // LDS
+                    updateFlags(R3.getValue())
                 }
                 else -> throw IllegalArgumentException("Unknown command code: ${instruction.commandCode}")
             }
@@ -115,7 +127,7 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
     fun displayState() {
         println("Accumulator: $accumulator")
         println("ProgramCounter: $programCounter")
-        println("MaxValue: $maxElementRegister")
+        println("MaxValue: $R2")
         println("Flags: $flags")
         dataMemory.displayMemory(0, 12)
     }
