@@ -79,24 +79,27 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                 }
                 6 -> {
                     if (flags["EZ"] == true) { // CEZ
-                        programCounter.setValue(instruction.address - 1)
+                        programCounter.setValue(instruction.address)
+                        continue
                     }
                 }
                 7 -> {
-                    accumulator.setValue(dataMemory.read(R1.getValue()))// LDI
+                    accumulator.setValue(dataMemory.read(R1.getValue()))// LDI STR1
                     updateFlags(accumulator.getValue())
                 }
                 8 -> {
-                    R1.increment() // IINC
+                    R1.increment() // INCR1
                 }
                 9 -> {
                     if (flags["LZ"] == true) { // CLZ
-                        programCounter.setValue(instruction.address - 1)
+                        programCounter.setValue(instruction.address)
+                        continue
                     }
                 }
                 10 -> {
                     if (flags["GZ"] == true) { // CGZ
-                        programCounter.setValue(instruction.address - 1)
+                        programCounter.setValue(instruction.address)
+                        continue
                     }
                 }
                 11 -> {
@@ -104,17 +107,17 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                     return
                 }
                 12 -> {
-                    R2.setValue(dataMemory.read(R1.getValue())) // MVS
+                    R2.setValue(dataMemory.read(R1.getValue())) // LDR2
                 }
                 13 -> {
-                    R3.setValue(dataMemory.read(instruction.address)) //SAS
+                    R3.setValue(dataMemory.read(instruction.address)) // LDR3
                 }
                 14 -> {
-                    R3.decrement() //DECA
+                    R3.decrement() //DECR3
                     updateFlags(R3.getValue())
                 }
                 15 -> {
-                    accumulator.setValue(R3.getValue()) // LDS
+                    accumulator.setValue(R3.getValue()) // LDS STR3
                     updateFlags(R3.getValue())
                 }
                 else -> throw IllegalArgumentException("Unknown command code: ${instruction.commandCode}")
