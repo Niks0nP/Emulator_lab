@@ -15,9 +15,8 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
     private val flags = mutableMapOf("GZ" to false, "EZ" to false, "LZ" to false)
 
     fun initializeData(data: IntArray) {
-        dataMemory.write(0, data.size)
         for (i in data.indices) {
-            dataMemory.write(i + 1, data[i])
+            dataMemory.write(i, data[i])
         }
     }
 
@@ -55,27 +54,36 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
             val instruction = decodeInstruction(instructionCode)
 
             when (instruction.commandCode) {
-                0 -> {
-                    accumulator.setValue(dataMemory.read(instruction.address)) // LOAD
-                    updateFlags(dataMemory.read(instruction.address))
+                0 -> { // LD Rx
+                    val register = getRegisterByCode(instruction.address)
+                    accumulator.setValue(register.getValue()) // LDS STR3
+                    updateFlags(register.getValue())
                 }
-                1 -> dataMemory.write(instruction.address, accumulator.getValue()) // STORE
-                2 -> {
-                    accumulator.setValue(accumulator.getValue() + dataMemory.read(instruction.address)) // ADD
+                1 -> { // ST Rx
+                    val register = getRegisterByCode(instruction.address)
+                    register.setValue(dataMemory.read(R1.getValue()))
+                    updateFlags(register.getValue())
+                }
+                2 -> { // ADD Rx
+                    val register = getRegisterByCode(instruction.address)
+                    accumulator.setValue(accumulator.getValue() + register.getValue())
                     updateFlags(accumulator.getValue())
                 }
-                3 -> {
-                    val result = accumulator.getValue() - R2.getValue() // SUB
+                3 -> { // SUB Rx
+                    val register = getRegisterByCode(instruction.address)
+                    val result = accumulator.getValue() - register.getValue()
                     updateFlags(result)
                     accumulator.setValue(result)
                 }
-                4 -> {
-                    accumulator.increment() // INC
-                    updateFlags(accumulator.getValue())
+                4 -> { // INC Rx
+                    val register = getRegisterByCode(instruction.address)
+                    register.increment()
+                    updateFlags(register.getValue())
                 }
-                5 -> {
-                    accumulator.decrement() // DEC
-                    updateFlags(accumulator.getValue())
+                5 -> { // DEC Rx
+                    val register = getRegisterByCode(instruction.address)
+                    register.decrement()
+                    updateFlags(register.getValue())
                 }
                 6 -> {
                     if (flags["EZ"] == true) { // CEZ
@@ -84,11 +92,12 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                     }
                 }
                 7 -> {
-                    accumulator.setValue(dataMemory.read(R1.getValue()))// LDI STR1
-                    updateFlags(accumulator.getValue())
+//                    val register = getRegisterByCode(instruction.address)
+//                    accumulator.setValue(dataMemory.read(register.getValue()))// LDI STAC R1
+//                    updateFlags(accumulator.getValue())
                 }
                 8 -> {
-                    R1.increment() // INCR1
+//                    R1.increment() // INCR1
                 }
                 9 -> {
                     if (flags["LZ"] == true) { // CLZ
@@ -107,18 +116,20 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
                     return
                 }
                 12 -> {
-                    R2.setValue(dataMemory.read(R1.getValue())) // LDR2
+//                    val register = getRegisterByCode(instruction.address)
+//                    register.setValue(dataMemory.read(R1.getValue())) // LOADR2
                 }
                 13 -> {
-                    R3.setValue(dataMemory.read(instruction.address)) // LDR3
+//                    R3.setValue(dataMemory.read(instruction.address)) // LDR3
                 }
                 14 -> {
-                    R3.decrement() //DECR3
-                    updateFlags(R3.getValue())
+//                    R3.decrement() //DECR3
+//                    updateFlags(R3.getValue())
                 }
                 15 -> {
-                    accumulator.setValue(R3.getValue()) // LDS STR3
-                    updateFlags(R3.getValue())
+//                    val register = getRegisterByCode(instruction.address)
+//                    accumulator.setValue(register.getValue()) // LDS STR3
+//                    updateFlags(register.getValue())
                 }
                 else -> throw IllegalArgumentException("Unknown command code: ${instruction.commandCode}")
             }
@@ -132,9 +143,21 @@ class ProcessEmulator(dataMemorySize: Int, instructionMemorySize: Int) {
         println("ProgramCounter: $programCounter")
         println("MaxValue: $R2")
         println("Flags: $flags")
-        dataMemory.displayMemory(0, 12)
+        dataMemory.displayMemory(0, dataMemory.read(0))
+    }
+
+    private fun getRegisterByCode(code: Int): Register16Bit {
+        return when (code) {
+            0 -> accumulator
+            1 -> R1
+            2 -> R2
+            3 -> R3
+            else -> throw IllegalArgumentException("Invalid register code: $code")
+        }
     }
 }
+
+
 
 /**
  * Структура команды:

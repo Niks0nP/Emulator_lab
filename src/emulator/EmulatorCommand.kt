@@ -16,7 +16,10 @@ class EmulatorCommand(private val command: Int) {
     }
 
     fun getAddress(): Int {
-        return command and ADDRESS_MASK
+        return if ((command and ADDRESS_MASK) shr 6 > 0) {
+            (command and ADDRESS_MASK) shr 6
+        } else
+            command and ADDRESS_MASK
     }
 
     override fun toString(): String {
